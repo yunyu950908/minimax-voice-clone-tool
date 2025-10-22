@@ -1,0 +1,27 @@
+# Binaries
+bin/
+
+# Logs and runtime data
+*.log
+*.out
+*.tmp
+tmp/
+*.db
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# Environment and secrets
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib

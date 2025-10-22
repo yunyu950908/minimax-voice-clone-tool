@@ -1,0 +1,75 @@
+name: Build macOS Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Git tag to create/update the release for (e.g. v1.2.3)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Determine release tag
+        id: release_tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+            if [ -z "${INPUT_TAG}" ]; then
+              echo "release_tag input is required for manual runs" >&2
+              exit 1
+            fi
+            echo "value=${INPUT_TAG}" >> "${GITHUB_OUTPUT}"
+          else
+            if [ -z "${RELEASE_TAG}" ]; then
+              echo "release tag missing from event payload" >&2
+              exit 1
+            fi
+            echo "value=${RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build macOS binary
+        env:
+          RELEASE_TAG: ${{ steps.release_tag.outputs.value }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          OUTPUT="minimax_${RELEASE_TAG}_darwin_${GOARCH}"
+          GOOS=darwin GOARCH=${GOARCH} go build -trimpath -ldflags="-s -w" -o "dist/${OUTPUT}" ./cmd/minimax
+          tar -C dist -czf "dist/${OUTPUT}.tar.gz" "${OUTPUT}"
+          rm "dist/${OUTPUT}"
+          shasum -a 256 "dist/${OUTPUT}.tar.gz" > "dist/${OUTPUT}.tar.gz.sha256"
+
+      - name: Upload binaries to release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          omitBody: true
+          omitName: true
+          tag: ${{ steps.release_tag.outputs.value }}
+          artifacts: dist/*.tar.gz,dist/*.tar.gz.sha256
+
