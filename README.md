@@ -21,6 +21,25 @@ git clone <repo-url>
 cd minimax
 ```
 
+## 安装预编译版本 (以 arm64 为例)
+
+```bash
+# 1. 查询最新发布版本并下载对应的 macOS arm64 压缩包
+curl -sSfL "https://github.com/yunyu950908/minimax-voice-clone-tool/releases/download/v0.0.1/minimax_v0.0.1_darwin_arm64.tar.gz" -o minimax_darwin_arm64.tar.gz
+
+# 2. 创建存放可执行文件的目录
+mkdir -p ~/.local/bin
+
+# 3. 解压并放置到该目录，随后清理压缩包
+tar -xzf minimax_darwin_arm64.tar.gz -C ~/.local/bin
+rm minimax_darwin_arm64.tar.gz
+if [ -f ~/.local/bin/minimax ]; then rm ~/.local/bin/minimax; fi
+mv ~/.local/bin/minimax_v0.0.1_darwin_arm64 ~/.local/bin/minimax
+
+# 4. 将目录加入 PATH（按需选择 bash 或 zsh，执行后重新打开终端生效）
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+```
+
 ### 配置凭证
 1. 推荐在 shell 中导出环境变量，便于后续测试与运行：
    ```bash
